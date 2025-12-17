@@ -40,6 +40,8 @@ class TemplateMatcher:
     
     def select_area(self):
         from tkinter import Toplevel
+        self.running = False
+        self.start_btn.config(text="开始识别")
         self.selection_win = Toplevel(self.root)
         self.selection_win.attributes('-fullscreen', True)
         self.selection_win.attributes('-alpha', 0.3)
@@ -65,6 +67,8 @@ class TemplateMatcher:
                                 int(abs(x2-x1)), int(abs(y2-y1)))
         self.selection_win.destroy()
         messagebox.showinfo("选择完成", f"区域已选择: {self.screenshot_area}")
+        if self.templates:
+            self.load_templates_when_shotscreen()
 
     def load_templates(self):
         self.template_folder = filedialog.askdirectory(title="选择模板文件夹")
@@ -98,7 +102,40 @@ class TemplateMatcher:
                                     interpolation=cv2.INTER_AREA
                                 )
                         self.templates.append((file, img))
-            messagebox.showinfo("加载完成", f"已加载 {len(self.templates)} 个模板")
+            print("加载完成" + f"已加载 {len(self.templates)} 个模板")
+
+    def load_templates_when_shotscreen(self):
+        if self.template_folder:
+            self.templates = []
+            for file in os.listdir(self.template_folder):
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                    img = cv2.imread(os.path.join(self.template_folder, file))
+                    # 获取截图区域尺寸
+                    _, _, region_width, region_height = self.screenshot_area
+                    # 获取模板尺寸
+                    template_height, template_width = img.shape[:2]
+                    if img is not None:
+                        if (template_width > region_width or template_height > region_height):
+                            # 计算缩放比例
+                            width_ratio = region_width / template_width
+                            height_ratio = region_height / template_height
+                            
+                            # 使用较小的比例确保模板完全适合截图区域
+                            scale_ratio = min(width_ratio, height_ratio, 1.0)  # 最大缩放比例为1（不放大）
+                            
+                            if scale_ratio < 1.0:
+                                # 计算新尺寸
+                                new_width = int(template_width * scale_ratio)
+                                new_height = int(template_height * scale_ratio)
+                                
+                                # 缩放模板
+                                img = cv2.resize(
+                                    img, 
+                                    (new_width, new_height), 
+                                    interpolation=cv2.INTER_AREA
+                                )
+                        self.templates.append((file, img))
+            print("加载完成" + f"已加载 {len(self.templates)} 个模板")
 
     def toggle_recognition(self):
         if not self.screenshot_area:
