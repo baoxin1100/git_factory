@@ -11,6 +11,7 @@ class TemplateMatcher:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("模板匹配按键")
+        self.root.geometry("400x160")
         
         # 变量初始化
         self.screenshot_area = None
@@ -23,16 +24,8 @@ class TemplateMatcher:
         tk.Button(self.root, text="加载模板", command=self.load_templates).pack(pady=5)
         self.start_btn = tk.Button(self.root, text="开始识别", command=self.toggle_recognition)
         self.start_btn.pack(pady=5)
-        
-        # 添加焦点按钮（调试用）
-        tk.Button(self.root, text="测试按键", command=self.test_key).pack(pady=5)
-        
+
         self.root.mainloop()
-    
-    def test_key(self):
-        """测试按键功能"""
-        pyautogui.press('a')
-        messagebox.showinfo("测试", "已发送按键'A'，请检查其他窗口是否响应")
     
     def select_area(self):
         from tkinter import Toplevel
@@ -61,17 +54,6 @@ class TemplateMatcher:
                                 int(abs(x2-x1)), int(abs(y2-y1)))
         self.selection_win.destroy()
         messagebox.showinfo("选择完成", f"区域已选择: {self.screenshot_area}")
-    
-    # def load_templates(self):
-    #     self.template_folder = filedialog.askdirectory(title="选择模板文件夹")
-    #     if self.template_folder:
-    #         self.templates = []
-    #         for file in os.listdir(self.template_folder):
-    #             if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-    #                 img = cv2.imread(os.path.join(self.template_folder, file))
-    #                 if img is not None:
-    #                     self.templates.append((file, img))
-    #         messagebox.showinfo("加载完成", f"已加载 {len(self.templates)} 个模板")
 
     def load_templates(self):
         self.template_folder = filedialog.askdirectory(title="选择模板文件夹")
@@ -107,59 +89,6 @@ class TemplateMatcher:
                         self.templates.append((file, img))
             messagebox.showinfo("加载完成", f"已加载 {len(self.templates)} 个模板")
 
-    def get_scaled_template(self, filename, template_img):
-        self.template_folder = filedialog.askdirectory(title="选择模板文件夹")
-        self.templates = []
-        """获取按比例缩放的模板（如果需要）"""
-        # 如果截图区域未定义，返回原始模板
-        if not self.screenshot_area:
-            return template_img
-        
-        # 获取截图区域尺寸
-        _, _, region_width, region_height = self.screenshot_area
-        
-        # 获取模板尺寸
-        template_height, template_width = template_img.shape[:2]
-        
-        # 如果模板尺寸小于等于截图区域，直接返回原始模板
-        if template_width <= region_width and template_height <= region_height:
-            return template_img
-        
-        # 生成缓存键
-        cache_key = f"{filename}_{region_width}x{region_height}"
-        
-        # 如果缓存中存在，直接返回
-        if cache_key in self.scaled_templates_cache:
-            return self.scaled_templates_cache[cache_key]
-        
-        # 计算缩放比例
-        width_ratio = region_width / template_width
-        height_ratio = region_height / template_height
-        
-        # 使用较小的比例确保模板完全适合截图区域
-        scale_ratio = min(width_ratio, height_ratio, 1.0)  # 最大缩放比例为1（不放大）
-        
-        if scale_ratio < 1.0:
-            # 计算新尺寸
-            new_width = int(template_width * scale_ratio)
-            new_height = int(template_height * scale_ratio)
-            
-            # 缩放模板
-            scaled_template = cv2.resize(
-                template_img, 
-                (new_width, new_height), 
-                interpolation=cv2.INTER_AREA
-            )
-            
-            print(f"模板 {filename} 已缩放: {template_width}x{template_height} -> {new_width}x{new_height} (比例: {scale_ratio:.2f})")
-        else:
-            scaled_template = template_img
-        
-        # 缓存结果
-        self.scaled_templates_cache[cache_key] = scaled_template
-        
-        return scaled_template    
-    
     def toggle_recognition(self):
         if not self.screenshot_area:
             messagebox.showerror("错误", "请先选择截图区域")
@@ -174,7 +103,29 @@ class TemplateMatcher:
             threading.Thread(target=self.recognition_loop, daemon=True).start()
         else:
             self.start_btn.config(text="开始识别")
+
+    def start_spamming_a(self):
+        """开始A键连发，持续4秒"""
+        self.spamming_a = True
+        self.spam_end_time = time.time() + 4  # 设置5秒后结束
+        print(f"开始A键连发，持续4秒")
+        self.spam_key_loop()
     
+    def spam_key_loop(self):
+        """A键连发循环"""
+        while self.running and self.spamming_a:
+            if self.spamming_a:
+                # 检查是否超过6秒
+                if time.time() > self.spam_end_time:
+                    self.spamming_a = False
+                    print("A键连发结束")
+                else:
+                    # 持续按A键
+                    pyautogui.press('a')
+                    time.sleep(0.05)  # 每50毫秒按一次，避免过快
+            else:
+                time.sleep(0.1)  # 减少CPU占用
+
     def press_key_with_focus(self, key):
         """带焦点控制的按键模拟"""
         try:
@@ -205,7 +156,7 @@ class TemplateMatcher:
                 # 查找最匹配的模板
                 for filename, template in self.templates:
                     result = cv2.matchTemplate(screen_img, template, cv2.TM_CCOEFF_NORMED)
-                    _, max_val, _, _ = cv2.minMaxLoc(result)
+                    min_val, max_val, _, _ = cv2.minMaxLoc(result)
                     
                     if max_val > best_score:
                         best_score = max_val
@@ -214,7 +165,9 @@ class TemplateMatcher:
                 # 如果有匹配的模板，执行按键操作
                 if best_match:
                     print(f"最佳匹配: {best_match}, 分数: {best_score:.3f}")
-                    if 'a' in best_match.lower():
+                    if 'a4' in best_match.lower() and best_score > 0.7:
+                        self.start_spamming_a()
+                    elif 'a' in best_match.lower():
                         self.press_key_with_focus('a')
                     elif 'd' in best_match.lower():
                         self.press_key_with_focus('d')
