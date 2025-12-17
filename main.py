@@ -15,15 +15,13 @@ class TemplateMatcher:
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         window_width = 400
-        window_height = 160
+        window_height = 240
         # 计算窗口居中位置
         x = (screen_width - window_width) // 4 * 3
         y = (screen_height - window_height) // 2
         
         # 设置窗口位置和大小
-        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.root.geometry("400x160")
-        
+        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")        
         # 变量初始化
         self.screenshot_area = None
         self.templates = []
@@ -31,9 +29,9 @@ class TemplateMatcher:
         self.running = False
         
         # 创建UI
-        tk.Button(self.root, text="选择截图区域", command=self.select_area).pack(pady=5)
-        tk.Button(self.root, text="加载模板", command=self.load_templates).pack(pady=5)
-        self.start_btn = tk.Button(self.root, text="开始识别", command=self.toggle_recognition)
+        tk.Button(self.root, text="选择截图区域", command=self.select_area, font=("微软雅黑", 14)).pack(pady=5)
+        tk.Button(self.root, text="加载模板", command=self.load_templates, font=("微软雅黑", 14)).pack(pady=5)
+        self.start_btn = tk.Button(self.root, text="开始识别", command=self.toggle_recognition, font=("微软雅黑", 14))
         self.start_btn.pack(pady=5)
 
         self.root.mainloop()
