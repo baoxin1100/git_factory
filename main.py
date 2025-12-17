@@ -29,7 +29,7 @@ class TemplateMatcher:
         self.running = False
         
         # 创建UI
-        self.shotscreen_btn = tk.Button(self.root, text="选择截图区域", command=self.select_area, font=("微软雅黑", 14))
+        self.shotscreen_btn = tk.Button(self.root, text="选择识别区域", command=self.select_area, font=("微软雅黑", 14))
         self.shotscreen_btn.pack(pady=5)
         tk.Button(self.root, text="加载模板", command=self.load_templates, font=("微软雅黑", 14)).pack(pady=5)
         self.start_btn = tk.Button(self.root, text="开始识别", command=self.toggle_recognition, font=("微软雅黑", 14))
@@ -139,7 +139,7 @@ class TemplateMatcher:
 
     def toggle_recognition(self):
         if not self.screenshot_area:
-            messagebox.showerror("错误", "请先选择截图区域")
+            messagebox.showerror("错误", "请先选择识别区域")
             return
         if not self.templates:
             messagebox.showerror("错误", "请先加载模板")
