@@ -169,8 +169,7 @@ class TemplateMatcher:
                     print("A键连发结束")
                 else:
                     # 持续按A键
-                    pyautogui.press(['a', 'd', 'left', 'right'], presses=2, interval=0.05)
-                    time.sleep(0.05)  # 每50毫秒按一次，避免过快
+                    pyautogui.press(['a', 'd', 'left', 'right'], interval=0.05)  # 每30毫秒按一次，避免过快
             else:
                 time.sleep(0.1)  # 减少CPU占用
 
