@@ -155,7 +155,7 @@ class TemplateMatcher:
     def start_spamming_a(self):
         """开始A键连发，持续4秒"""
         self.spamming_a = True
-        self.spam_end_time = time.time() + 4  # 设置5秒后结束
+        self.spam_end_time = time.time() + 1  # 设置5秒后结束
         print(f"开始A键连发，持续4秒")
         self.spam_key_loop()
     
@@ -169,7 +169,7 @@ class TemplateMatcher:
                     print("A键连发结束")
                 else:
                     # 持续按A键
-                    pyautogui.press('a')
+                    pyautogui.press(['a', 'd', 'left', 'right'], presses=2, interval=0.05)
                     time.sleep(0.05)  # 每50毫秒按一次，避免过快
             else:
                 time.sleep(0.1)  # 减少CPU占用
@@ -213,7 +213,7 @@ class TemplateMatcher:
                 # 如果有匹配的模板，执行按键操作
                 if best_match:
                     print(f"最佳匹配: {best_match}, 分数: {best_score:.3f}")
-                    if 'a4' in best_match.lower() and best_score > 0.7:
+                    if 'a4' in best_match.lower() and best_score > 0.3:
                         self.start_spamming_a()
                     elif 'a' in best_match.lower():
                         self.press_key_with_focus('a')
