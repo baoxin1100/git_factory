@@ -71,6 +71,9 @@ class TemplateMatcher:
         self.shotscreen_btn.config(text="重新选择区域")
 
     def load_templates(self):
+        if not self.screenshot_area:
+            messagebox.showerror("错误", "请先选择识别区域")
+            return
         self.template_folder = filedialog.askdirectory(title="选择模板文件夹")
         if self.template_folder:
             self.templates = []
@@ -102,7 +105,7 @@ class TemplateMatcher:
                                     interpolation=cv2.INTER_AREA
                                 )
                         self.templates.append((file, img))
-            print("加载完成" + f"已加载 {len(self.templates)} 个模板")
+            messagebox.showinfo("加载完成", f"已加载 {len(self.templates)} 个模板")
 
     def load_templates_when_shotscreen(self):
         if self.template_folder:

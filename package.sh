@@ -1,0 +1,1 @@
+pyinstaller --onefile --windowed --name "giftfactory" --icon=icon.ico  --hidden-import tkinter --hidden-import cv2 --hidden-import numpy --hidden-import pyautogui --hidden-import PIL --clean main.py
