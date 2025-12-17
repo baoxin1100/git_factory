@@ -29,7 +29,8 @@ class TemplateMatcher:
         self.running = False
         
         # 创建UI
-        tk.Button(self.root, text="选择截图区域", command=self.select_area, font=("微软雅黑", 14)).pack(pady=5)
+        self.shotscreen_btn = tk.Button(self.root, text="选择截图区域", command=self.select_area, font=("微软雅黑", 14))
+        self.shotscreen_btn.pack(pady=5)
         tk.Button(self.root, text="加载模板", command=self.load_templates, font=("微软雅黑", 14)).pack(pady=5)
         self.start_btn = tk.Button(self.root, text="开始识别", command=self.toggle_recognition, font=("微软雅黑", 14))
         self.start_btn.pack(pady=5)
@@ -67,6 +68,7 @@ class TemplateMatcher:
         messagebox.showinfo("选择完成", f"区域已选择: {self.screenshot_area}")
         if self.templates:
             self.load_templates_when_shotscreen()
+        self.shotscreen_btn.config(text="重新选择区域")
 
     def load_templates(self):
         self.template_folder = filedialog.askdirectory(title="选择模板文件夹")
