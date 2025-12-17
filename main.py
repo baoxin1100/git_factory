@@ -11,6 +11,17 @@ class TemplateMatcher:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("模板匹配按键")
+        # 获取屏幕尺寸
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        window_width = 400
+        window_height = 160
+        # 计算窗口居中位置
+        x = (screen_width - window_width) // 4 * 3
+        y = (screen_height - window_height) // 2
+        
+        # 设置窗口位置和大小
+        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.root.geometry("400x160")
         
         # 变量初始化
@@ -180,5 +191,4 @@ class TemplateMatcher:
 if __name__ == "__main__":
     # 添加调试信息
     print("程序启动...")
-    print("确保已授予辅助功能权限")
     TemplateMatcher()
