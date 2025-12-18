@@ -28,14 +28,78 @@ class TemplateMatcher:
         self.template_folder = ""
         self.running = False
         
+        # 红框相关变量
+        self.overlay_window = None
+        self.overlay_rect = None
+        self.overlay_label = None
+        
+        # 创建按钮框架（第一行：区域选择相关按钮）
+        area_frame = tk.Frame(self.root)
+        area_frame.pack(pady=5)
         # 创建UI
-        self.shotscreen_btn = tk.Button(self.root, text="选择识别区域", command=self.select_area, font=("微软雅黑", 14))
-        self.shotscreen_btn.pack(pady=5)
+        self.shotscreen_btn = tk.Button(area_frame, text="选择识别区域", command=self.select_area, font=("微软雅黑", 14))
+        self.shotscreen_btn.pack(side=tk.LEFT, padx=(0, 10))
+        # 使用默认识别区域按钮
+        self.default_area_btn = tk.Button(
+            area_frame,
+            text="使用默认区域",
+            command=self.use_default_area,
+            font=("微软雅黑", 14)
+        )
+        self.default_area_btn.pack(side=tk.LEFT)
+        
         tk.Button(self.root, text="加载模板", command=self.load_templates, font=("微软雅黑", 14)).pack(pady=5)
         self.start_btn = tk.Button(self.root, text="开始识别", command=self.toggle_recognition, font=("微软雅黑", 14))
         self.start_btn.pack(pady=5)
 
         self.root.mainloop()
+    
+    def show_area_overlay(self):
+        """显示红框覆盖层"""
+        # 如果已经有红框窗口，先关闭
+        if self.overlay_window:
+            try:
+                self.overlay_window.destroy()
+            except:
+                pass
+        
+        if not self.screenshot_area:
+            return
+        
+        x, y, w, h = self.screenshot_area
+        
+        # 创建仅覆盖红框区域的窗口，而不是全屏
+        self.overlay_window = tk.Toplevel(self.root)
+        
+        # 设置窗口位置和大小（仅覆盖红框区域）
+        self.overlay_window.geometry(f"{w+6}x{h+6}+{x-3}+{y-3}")  # +6和-3是为了留出边框空间
+        
+        # 关键设置：无边框、透明、置顶但允许其他窗口激活
+        self.overlay_window.overrideredirect(True)      # 无边框
+        self.overlay_window.attributes('-topmost', True) # 置顶，但在红框区域外可以点击其他窗口
+        self.overlay_window.attributes('-transparentcolor', 'black')  # 黑色透明
+        
+        # 设置窗口为工具窗口（减少干扰）
+        self.overlay_window.attributes('-toolwindow', True)
+        
+        # 允许穿透点击（关键！）
+        self.overlay_window.attributes('-disabled', True)  # 窗口本身不接受输入
+        self.overlay_window.attributes('-alpha', 0.7)      # 70%透明度
+        
+        canvas = tk.Canvas(self.overlay_window, bg='black', highlightthickness=0)
+        canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # 绘制红框（内缩3像素，避免被窗口边框遮挡）
+        self.overlay_rect = canvas.create_rectangle(
+            3, 3, w+3, h+3,  # 内缩3像素
+            outline='red', width=3
+        )
+        
+        print(f"显示红框: {self.screenshot_area}")
+    
+    def update_area_overlay(self):
+        """更新红框位置（重新显示）"""
+        self.show_area_overlay()
     
     def select_area(self):
         from tkinter import Toplevel
@@ -52,6 +116,42 @@ class TemplateMatcher:
         self.canvas.bind("<Button-1>", self.on_press)
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
+
+        # 添加提示文字
+        self.canvas.create_text(
+            self.selection_win.winfo_screenwidth() // 2,
+            100,
+            text="拖动鼠标选择区域，完成后按ESC退出",
+            font=("微软雅黑", 16),
+            fill='white'
+        )
+
+    def use_default_area(self):
+        # 获取窗口截图
+        try:
+            self.running = False
+            self.start_btn.config(text="开始识别")
+            window = pyautogui.getWindowsWithTitle('胜利女神：新的希望')[0]  # 根据窗口标题获取
+            window.activate()  # 激活窗口（可选）
+            nx = 0.5
+            ny = 0.6
+            nh = 391/1414
+            wh = 339/391 
+            regionh = int(window.box.height * nh)
+            regionw = int(regionh * wh)
+            regionx = window.box.width // 2 - regionw//2 + window.box.left
+            reriony = int(window.box.height * ny) - regionh//2 + window.box.top
+            self.screenshot_area = (regionx, reriony, 
+                               regionw, regionh)
+            messagebox.showinfo("选择完成", f"区域已选择: {self.screenshot_area}")
+            self.shotscreen_btn.config(text="重新选择区域")
+            if self.templates:
+                self.load_templates_when_shotscreen()
+            # 显示红框
+            self.show_area_overlay()
+            
+        except Exception:
+            messagebox.showerror("错误", "请先打开胜利女神")
         
     def on_press(self, event):
         self.start_x, self.start_y = event.x, event.y
@@ -69,6 +169,9 @@ class TemplateMatcher:
         if self.templates:
             self.load_templates_when_shotscreen()
         self.shotscreen_btn.config(text="重新选择区域")
+        
+        # 显示红框
+        self.show_area_overlay()
 
     def load_templates(self):
         if not self.screenshot_area:
@@ -150,6 +253,11 @@ class TemplateMatcher:
             
         self.running = not self.running
         if self.running:
+            try:
+                window = pyautogui.getWindowsWithTitle('胜利女神：新的希望')[0]  # 根据窗口标题获取
+                window.activate()  # 激活窗口（可选）
+            except:
+                pass
             self.start_btn.config(text="停止识别")
             threading.Thread(target=self.recognition_loop, daemon=True).start()
         else:
@@ -180,18 +288,9 @@ class TemplateMatcher:
     def press_key_with_focus(self, key):
         """带焦点控制的按键模拟"""
         try:
-            # # 先激活目标窗口（通过点击截图区域）
-            # if self.screenshot_area:
-            #     x, y, w, h = self.screenshot_area
-            #     pyautogui.click(x + w//2, y + h//2)
-            #     # time.sleep(0.1)  # 等待窗口激活
-            
-            # 发送按键
             pyautogui.press(key)
-            
             # 记录日志
             print(f"按键已发送: {key}")
-            
         except Exception as e:
             print(f"按键失败: {e}")
     
