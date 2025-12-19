@@ -6,6 +6,7 @@ import pyautogui
 import threading
 import time
 import os
+from PIL import Image
 
 class TemplateMatcher:
     def __init__(self):
@@ -182,7 +183,10 @@ class TemplateMatcher:
             self.templates = []
             for file in os.listdir(self.template_folder):
                 if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                    img = cv2.imread(os.path.join(self.template_folder, file))
+                    pil_img = Image.open(os.path.join(self.template_folder, file))
+                
+                    # 转换为OpenCV格式 (BGR)
+                    img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                     # 获取截图区域尺寸
                     _, _, region_width, region_height = self.screenshot_area
                     # 获取模板尺寸
@@ -215,7 +219,9 @@ class TemplateMatcher:
             self.templates = []
             for file in os.listdir(self.template_folder):
                 if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                    img = cv2.imread(os.path.join(self.template_folder, file))
+                    pil_img = Image.open(os.path.join(self.template_folder, file))
+                    # 转换为OpenCV格式 (BGR)
+                    img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                     # 获取截图区域尺寸
                     _, _, region_width, region_height = self.screenshot_area
                     # 获取模板尺寸
